@@ -319,7 +319,6 @@ public class ObjectRenderer {
         colorCorrectionRgba[1],
         colorCorrectionRgba[2],
         colorCorrectionRgba[3]);
-//    GLES20.glUniform4fv(colorCorrectionParameterUniform,1,colorCorrectionRgba,0);
     Log.d("tag","color red = "+colorTintRgba[0]+" green = "+ colorTintRgba[1] + " blue = "+colorTintRgba[2]);
     GLES20.glUniform4f(
         colorTintParameterUniform,
@@ -327,7 +326,6 @@ public class ObjectRenderer {
         colorTintRgba[1],
         colorTintRgba[2],
         colorTintRgba[3]);
-//    GLES20.glUniform4fv(colorTintParameterUniform,1,colorTintRgba,0);
 
     // Set the object material properties.
     Log.d(TAG,"glUniform4f ambient = "+ambient+" diffuse = "+diffuse+" specular = "+specular+ " specularPower = "+ specularPower);

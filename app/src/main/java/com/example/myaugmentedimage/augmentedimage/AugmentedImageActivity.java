@@ -46,6 +46,7 @@ import com.example.myaugmentedimage.common.helpers.FullScreenHelper;
 import com.example.myaugmentedimage.common.helpers.SnackbarHelper;
 import com.example.myaugmentedimage.common.helpers.TrackingStateHelper;
 import com.example.myaugmentedimage.common.rendering.BackgroundRenderer;
+import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
@@ -305,13 +306,14 @@ public class AugmentedImageActivity extends AppCompatActivity implements GLSurfa
 
     // Iterate to update augmentedImageMap, remove elements we cannot draw.
     for (AugmentedImage augmentedImage : updatedAugmentedImages) {
+      Log.d(TAG,"updatedAugmentedImages for");
       switch (augmentedImage.getTrackingState()) {
         case PAUSED:
           // When an image is in PAUSED state, but the camera is not PAUSED, it has been detected,
           // but not yet tracked.
           String text = String.format("Detected Image %d", augmentedImage.getIndex());
 //          messageSnackbarHelper.showMessage(this, text);
-          Log.d(TAG,"PAUSED");
+          Log.d(TAG,"augmented PAUSED");
           break;
 
         case TRACKING:
@@ -323,7 +325,7 @@ public class AugmentedImageActivity extends AppCompatActivity implements GLSurfa
                   fitToScanView.setVisibility(View.GONE);
                 }
               });
-          Log.d(TAG,"TRACKING");
+          Log.d(TAG,"augmented TRACKING");
 
           // Create a new anchor for newly found images.
           if (!augmentedImageMap.containsKey(augmentedImage.getIndex())) {
@@ -335,11 +337,11 @@ public class AugmentedImageActivity extends AppCompatActivity implements GLSurfa
 
         case STOPPED:
           augmentedImageMap.remove(augmentedImage.getIndex());
-          Log.d(TAG,"STOPED");
+          Log.d(TAG,"augmented STOPED");
           break;
 
         default:
-          Log.d(TAG,"default");
+          Log.d(TAG,"augmented default");
           break;
       }
     }
@@ -348,40 +350,15 @@ public class AugmentedImageActivity extends AppCompatActivity implements GLSurfa
     for (Pair<AugmentedImage, Anchor> pair : augmentedImageMap.values()) {
       AugmentedImage augmentedImage = pair.first;
       Anchor centerAnchor = augmentedImageMap.get(augmentedImage.getIndex()).second;
-      switch (augmentedImage.getTrackingState()) {
-        case TRACKING:
-          augmentedImageRenderer.draw(
-              viewmtx, projmtx, augmentedImage, centerAnchor, colorCorrectionRgba);
-          break;
-        default:
-          break;
+      if (augmentedImage.getTrackingState() == TrackingState.TRACKING) {
+        augmentedImageRenderer.draw(
+                viewmtx, projmtx, augmentedImage, centerAnchor, colorCorrectionRgba);
       }
     }
   }
 
   private boolean setupAugmentedImageDatabase(Config config) {
     AugmentedImageDatabase augmentedImageDatabase;
-
-    // There are two ways to configure an AugmentedImageDatabase:
-    // 1. Add Bitmap to DB directly
-    // 2. Load a pre-built AugmentedImageDatabase
-    // Option 2) has
-    // * shorter setup time
-    // * doesn't require images to be packaged in apk.
-    if (useSingleImage) {
-      Bitmap augmentedImageBitmap = loadAugmentedImageBitmap();
-      Log.d("tag","loadAugmentedImageBitmap");
-      if (augmentedImageBitmap == null) {
-        return false;
-      }
-
-      augmentedImageDatabase = new AugmentedImageDatabase(session);
-      augmentedImageDatabase.addImage("image_name", augmentedImageBitmap);
-      // If the physical size of the image is known, you can instead use:
-      //     augmentedImageDatabase.addImage("image_name", augmentedImageBitmap, widthInMeters);
-      // This will improve the initial detection speed. ARCore will still actively estimate the
-      // physical size of the image as it is viewed from multiple viewpoints.
-    } else {
       Log.d("tag","loadAugmentedImageDatabase");
       // This is an alternative way to initialize an AugmentedImageDatabase instance,
       // load a pre-existing augmented image database.
@@ -391,18 +368,8 @@ public class AugmentedImageActivity extends AppCompatActivity implements GLSurfa
         Log.e(TAG, "IO exception loading augmented image database.", e);
         return false;
       }
-    }
 
     config.setAugmentedImageDatabase(augmentedImageDatabase);
     return true;
-  }
-
-  private Bitmap loadAugmentedImageBitmap() {
-    try (InputStream is = getAssets().open("default.jpg")) {
-      return BitmapFactory.decodeStream(is);
-    } catch (IOException e) {
-      Log.e(TAG, "IO exception loading augmented image bitmap.", e);
-    }
-    return null;
   }
 }
